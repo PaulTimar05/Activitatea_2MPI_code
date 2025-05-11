@@ -1,0 +1,97 @@
+import time
+import itertools
+
+# Algoritmul DPLL
+def dpll(formula, assignment={}):
+    formula = [clause for clause in formula if not any(lit in assignment and assignment[abs(lit)] == (lit > 0) for lit in clause)]
+    formula = [[lit for lit in clause if abs(lit) not in assignment or assignment[abs(lit)] != (lit < 0)] for clause in formula]
+    if not formula:
+        return True, assignment
+    if any(len(clause) == 0 for clause in formula):
+        return False, {}
+    unit_clauses = [c[0] for c in formula if len(c) == 1]
+    for lit in unit_clauses:
+        var = abs(lit)
+        val = lit > 0
+        assignment[var] = val
+        return dpll(formula, assignment)
+    for clause in formula:
+        for lit in clause:
+            var = abs(lit)
+            if var not in assignment:
+                new_assignment = assignment.copy()
+                new_assignment[var] = True
+                sat, result = dpll(formula, new_assignment)
+                if sat:
+                    return True, result
+                new_assignment[var] = False
+                return dpll(formula, new_assignment)
+    return False, {}
+
+# Algoritmul Davis-Putnam (DP)
+def dp(formula):
+    variables = set(abs(lit) for clause in formula for lit in clause)
+    while variables:
+        x = variables.pop()
+        pos = [c for c in formula if x in c]
+        neg = [c for c in formula if -x in c]
+        new_clauses = []
+        for c1 in pos:
+            for c2 in neg:
+                resolvent = list(set(c1 + c2) - {x, -x})
+                if resolvent not in new_clauses:
+                    new_clauses.append(resolvent)
+        formula = [c for c in formula if x not in c and -x not in c] + new_clauses
+        if [] in formula:
+            return False
+    return True
+
+# Algoritmul de rezoluție clasic
+def resolution(formula):
+    new = set()
+    formula = [frozenset(clause) for clause in formula]
+    formula_set = set(formula)
+
+    while True:
+        pairs = list(itertools.combinations(formula_set, 2))
+        for (ci, cj) in pairs:
+            resolvents = resolve(ci, cj)
+            if frozenset() in resolvents:
+                return False
+            new |= resolvents
+        if new.issubset(formula_set):
+            return True
+        formula_set |= new
+
+def resolve(ci, cj):
+    resolvents = set()
+    for lit in ci:
+        if -lit in cj:
+            resolvent = (ci - {lit}) | (cj - {-lit})
+            resolvents.add(frozenset(resolvent))
+    return resolvents
+
+# Test comun
+FNC_formula = [[1, -2, 3], [-1, 4]]  # (A ∨ ¬B ∨ C) ∧ (¬A ∨ D)
+
+print("=== DPLL ===")
+start_time = time.time()
+satisfiable, model = dpll(FNC_formula)
+end_time = time.time()
+print("Satisfiabilă:", satisfiable)
+print("Model:", model)
+print("Timp execuție:", end_time - start_time, "secunde")
+
+print("\n=== Davis-Putnam (DP) ===")
+start_time = time.time()
+satisfiable = dp(FNC_formula)
+end_time = time.time()
+print("Satisfiabilă:", satisfiable)
+print("Timp execuție:", end_time - start_time, "secunde")
+
+print("\n=== Rezoluție ===")
+start_time = time.time()
+satisfiabila = resolution(FNC_formula)
+end_time = time.time()
+print("Satisfiabilă:", satisfiabila)
+print("Timp execuție:", end_time - start_time, "secunde")

@@ -1,0 +1,33 @@
+def dp_alt(formula):
+    vars = set(abs(lit) for clause in formula for lit in clause)
+
+    while vars:
+        x = vars.pop()
+        pos_clauses = []
+        neg_clauses = []
+
+        for clause in formula:
+            if x in clause:
+                pos_clauses.append(clause)
+            elif -x in clause:
+                neg_clauses.append(clause)
+
+        new_clauses = []
+        for c1 in pos_clauses:
+            for c2 in neg_clauses:
+                resolvent = []
+                for lit in c1:
+                    if lit != x:
+                        if lit not in resolvent:
+                            resolvent.append(lit)
+                for lit in c2:
+                    if lit != -x and lit not in resolvent:
+                        resolvent.append(lit)
+                if resolvent not in new_clauses:
+                    new_clauses.append(resolvent)
+
+        formula = [c for c in formula if x not in c and -x not in c] + new_clauses
+
+        if [] in formula:
+            return False
+    return True

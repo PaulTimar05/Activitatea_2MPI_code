@@ -1,0 +1,27 @@
+def resolution_alt(formula):
+    clauses = [set(c) for c in formula]
+    new = []
+
+    while True:
+        n = len(clauses)
+        for i in range(n):
+            for j in range(i + 1, n):
+                ci, cj = clauses[i], clauses[j]
+                resolvents = resolve_alt(ci, cj)
+                for res in resolvents:
+                    if not res:
+                        return False
+                    if res not in clauses and res not in new:
+                        new.append(res)
+        if all(res in clauses for res in new):
+            return True
+        clauses.extend(new)
+        new = []
+
+def resolve_alt(ci, cj):
+    resolvents = []
+    for lit in ci:
+        if -lit in cj:
+            res = (ci - {lit}) | (cj - {-lit})
+            resolvents.append(res)
+    return resolvents

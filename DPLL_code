@@ -1,0 +1,35 @@
+def dpll_alt(formula, assignment=None):
+    if assignment is None:
+        assignment = {}
+
+    # Elimină clauzele adevărate
+    new_formula = []
+    for clause in formula:
+        if any(lit in assignment and assignment[abs(lit)] == (lit > 0) for lit in clause):
+            continue
+        new_clause = [lit for lit in clause if abs(lit) not in assignment]
+        if new_clause == []:
+            return False, {}
+        new_formula.append(new_clause)
+
+    if not new_formula:
+        return True, assignment
+
+    for clause in new_formula:
+        if len(clause) == 1:
+            lit = clause[0]
+            assignment[abs(lit)] = lit > 0
+            return dpll_alt(new_formula, assignment)
+
+    for clause in new_formula:
+        for lit in clause:
+            var = abs(lit)
+            if var not in assignment:
+                for val in [True, False]:
+                    assignment_copy = assignment.copy()
+                    assignment_copy[var] = val
+                    sat, model = dpll_alt(new_formula, assignment_copy)
+                    if sat:
+                        return True, model
+                return False, {}
+    return False, {}
